@@ -117,7 +117,7 @@ struct Mesh {
 
 	static vf3d getClosePt(const vf3d& pt, const vf3d& v0, const vf3d& v1, const vf3d& v2)
 	{
-
+		//new code attempt
 		vf3d ab = v1 - v0;
 		vf3d ac = v2 - v0;
 
@@ -158,6 +158,7 @@ struct Mesh {
 		float v = vb * denom;
 		float w = vc * denom;
 		return v0 + v * ab + w * ac;
+		// old code
 		//vf3d ab = { v1.x - v0.x, v1.y - v0.y, v1.z - v0.z };
 		//vf3d ac = { v2.x - v0.x, v2.y - v0.y, v2.z - v0.z };
 		//vf3d ap = { pt.x - v0.x, pt.y - v0.y, pt.z - v0.z };
