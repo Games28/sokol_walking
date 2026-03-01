@@ -115,48 +115,97 @@ struct Mesh {
 		return t;
 	}
 
-	static vf3d getClosePt(const vf3d& pt, const vf3d& t0, const vf3d& t1, const vf3d& t2)
+	static vf3d getClosePt(const vf3d& pt, const vf3d& v0, const vf3d& v1, const vf3d& v2)
 	{
-		vf3d ab = t1 - t0;
-		vf3d ac = t2 - t0;
 
-		vf3d ap = pt - t0;
+		vf3d ab = v1 - v0;
+		vf3d ac = v2 - v0;
+
+		vf3d ap = pt - v0;
 		float d1 = ab.dot(ap);
 		float d2 = ac.dot(ap);
-		if (d1 <= 0 && d2 <= 0) return t0;
+		if (d1 <= 0 && d2 <= 0) return v0;
 
-		vf3d bp = pt - t1;
+		vf3d bp = pt - v1;
 		float d3 = ab.dot(bp);
 		float d4 = ac.dot(bp);
-		if (d3 >= 0 && d4 <= d3) return t1;
+		if (d3 >= 0 && d4 <= d3) return v1;
 
-		vf3d cp = pt - t2;
+		vf3d cp = pt - v2;
 		float d5 = ab.dot(cp);
 		float d6 = ac.dot(cp);
-		if (d6 >= 0 && d5 <= d6) return t2;
+		if (d6 >= 0 && d5 <= d6) return v2;
 
 		float vc = d1 * d4 - d3 * d2;
 		if (vc <= 0 && d1 >= 0 && d3 <= 0) {
 			float v = d1 / (d1 - d3);
-			return t0 + v * ab;
+			return v0 + v * ab;
 		}
 
 		float vb = d5 * d2 - d1 * d6;
 		if (vb <= 0 && d2 >= 0 && d6 <= 0) {
 			float v = d2 / (d2 - d6);
-			return t0 + v * ac;
+			return v0 + v * ac;
 		}
 
 		float va = d3 * d6 - d5 * d4;
 		if (va <= 0 && (d4 - d3) >= 0 && (d5 - d6) >= 0) {
 			float v = (d4 - d3) / ((d4 - d3) + (d5 - d6));
-			return t1 + v * (t2 - t1);
+			return v1 + v * (v2 - v1);
 		}
 
 		float denom = 1 / (va + vb + vc);
 		float v = vb * denom;
 		float w = vc * denom;
-		return t0 + v * ab + w * ac;
+		return v0 + v * ab + w * ac;
+		//vf3d ab = { v1.x - v0.x, v1.y - v0.y, v1.z - v0.z };
+		//vf3d ac = { v2.x - v0.x, v2.y - v0.y, v2.z - v0.z };
+		//vf3d ap = { pt.x - v0.x, pt.y - v0.y, pt.z - v0.z };
+		//
+		//float d1 = ab.x * ap.x + ab.y * ap.y + ab.z * ap.z;
+		//float d2 = ac.x * ap.x + ac.y * ap.y + ac.z * ap.z;
+		//if (d1 <= 0 && d2 <= 0) return v0;
+		//
+		//vf3d bp = { pt.x - v1.x, pt.y - v1.y, pt.z - v1.z };
+		//float d3 = ab.x * bp.x + ab.y * bp.y + ab.z * bp.z;
+		//float d4 = ac.x * bp.x + ac.y * bp.y + ac.z * bp.z;
+		//if (d3 >= 0 && d4 <= d3) return v1;
+		//
+		//float vc = d1 * d4 - d3 * d2;
+		//if (vc <= 0 && d1 >= 0 && d3 <= 0) {
+		//	float v = d1 / (d1 - d3);
+		//	return { v0.x + ab.x * v, v0.y + ab.y * v, v0.z + ab.z * v };
+		//}
+		//
+		//vf3d cp = { pt.x - v2.x, pt.y - v2.y, pt.z - v2.z };
+		//float d5 = ab.x * cp.x + ab.y * cp.y + ab.z * cp.z;
+		//float d6 = ac.x * cp.x + ac.y * cp.y + ac.z * cp.z;
+		//if (d6 >= 0 && d5 <= d6) return v2;
+		//
+		//float vb = d5 * d2 - d1 * d6;
+		//if (vb <= 0 && d2 >= 0 && d6 <= 0) {
+		//	float w = d2 / (d2 - d6);
+		//	return { v0.x + ac.x * w, v0.y + ac.y * w, v0.z + ac.z * w };
+		//}
+		//
+		//float va = d3 * d6 - d5 * d4;
+		//if (va <= 0 && (d4 - d3) >= 0 && (d5 - d6) >= 0) {
+		//	float w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
+		//	return {
+		//		v1.x + (v2.x - v1.x) * w,
+		//			v1.y + (v2.y - v1.y) * w,
+		//			v1.z + (v2.z - v1.z) * w
+		//	};
+		//}
+		//
+		//float denom = 1.0f / (va + vb + vc);
+		//float v = vb * denom;
+		//float w = vc * denom;
+		//return {
+		//	v0.x + ab.x * v + ac.x * w,
+		//		v0.y + ab.y * v + ac.y * w,
+		//		v0.z + ab.z * v + ac.z * w
+		//};
 
 	}
 
