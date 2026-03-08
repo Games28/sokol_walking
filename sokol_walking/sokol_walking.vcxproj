@@ -125,7 +125,9 @@
   <ItemGroup>
     <ClInclude Include="demo.h" />
     <ClInclude Include="font.h" />
+    <ClInclude Include="linemesh.h" />
     <ClInclude Include="mesh.h" />
+    <ClInclude Include="object.h" />
     <ClInclude Include="return_code.h" />
     <ClInclude Include="shd.glsl.h" />
     <ClInclude Include="sokol_engine.h" />

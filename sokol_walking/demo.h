@@ -3,7 +3,8 @@
 #include "sokol/sokol_gfx.h"
 #include "sokol/sokol_glue.h"
 #include <iostream>
-
+#include "linemesh.h"
+#include "object.h"
 #include "shd.glsl.h"
 
 #include "math/v3d.h"
@@ -60,38 +61,38 @@ struct Shape {
 	}
 };
 
-struct Object
-{
-	Mesh mesh;
-	sg_view tex{ SG_INVALID_ID };
-	bool draggable = false;
-	bool isbillboard = false;
-
-	vf3d scale{ 1, 1, 1 }, rotation, translation;
-	mat4 model = mat4::makeIdentity();
-	int num_x = 0, num_y = 0;
-	int num_ttl = 0;
-
-	float anim_timer = 0;
-	int anim = 0;
-
-	void updateMatrixes() {
-		//xyz euler angles?
-		mat4 rot_x = mat4::makeRotX(rotation.x);
-		mat4 rot_y = mat4::makeRotY(rotation.y);
-		mat4 rot_z = mat4::makeRotZ(rotation.z);
-		mat4 rot = mat4::mul(rot_z, mat4::mul(rot_y, rot_x));
-
-		mat4 scl = mat4::makeScale(scale);
-
-		mat4 trans = mat4::makeTranslation(translation);
-
-		//combine
-		model = mat4::mul(trans, mat4::mul(rot, scl));
-	}
-
-	
-};
+//struct Object
+//{
+//	Mesh mesh;
+//	sg_view tex{ SG_INVALID_ID };
+//	bool draggable = false;
+//	bool isbillboard = false;
+//
+//	vf3d scale{ 1, 1, 1 }, rotation, translation;
+//	mat4 model = mat4::makeIdentity();
+//	int num_x = 0, num_y = 0;
+//	int num_ttl = 0;
+//
+//	float anim_timer = 0;
+//	int anim = 0;
+//
+//	void updateMatrixes() {
+//		//xyz euler angles?
+//		mat4 rot_x = mat4::makeRotX(rotation.x);
+//		mat4 rot_y = mat4::makeRotY(rotation.y);
+//		mat4 rot_z = mat4::makeRotZ(rotation.z);
+//		mat4 rot = mat4::mul(rot_z, mat4::mul(rot_y, rot_x));
+//
+//		mat4 scl = mat4::makeScale(scale);
+//
+//		mat4 trans = mat4::makeTranslation(translation);
+//
+//		//combine
+//		model = mat4::mul(trans, mat4::mul(rot, scl));
+//	}
+//
+//	
+//};
 
 struct
 {
@@ -710,101 +711,77 @@ struct Demo : SokolEngine {
 		}
 	}
 
-	vf3d getClosePt(Object& obj,vf3d pt) const
-	{
-		//localize point
-		float w = 1;
-		mat4 inv_model = mat4::inverse(obj.model);
-		pt = matMulVec(inv_model, pt, w);
-
-		float record_sq = -1;
-		vf3d closest_pt;
-		for (const auto& t : obj.mesh.tris)
-		{
-			vf3d close_pt = obj.mesh.getClosePt(pt,
-				obj.mesh.verts[t.a].pos,
-				obj.mesh.verts[t.b].pos,
-				obj.mesh.verts[t.c].pos);
-
-			float dist_sq = (close_pt - pt).mag_sq();
-			if (record_sq < 0 || dist_sq < record_sq)
-			{
-				record_sq = dist_sq;
-				closest_pt = close_pt;
-			}
-		}
-
-		w = 1;
-		return matMulVec(obj.model, closest_pt, w);
-	}
 	
 
-	void updatePhysics(Object& obj,float dt)
+	void updatePhysics(float dt)
 	{
 		
 
 		if (player_camera)
 		{
-			vf3d movement;
-			//move forward, backward
-			vf3d fb_dir(std::sin(cam.yaw), 0, std::cos(cam.yaw));
-			if (getKey(SAPP_KEYCODE_W).held) movement += 5.f * dt * fb_dir;
-			if (getKey(SAPP_KEYCODE_S).held) movement -= 3.f * dt * fb_dir;
-
-			//move left, right
-			vf3d lr_dir(fb_dir.z, 0, -fb_dir.x);
-			if (getKey(SAPP_KEYCODE_A).held) movement += 4.f * dt * lr_dir;
-			if (getKey(SAPP_KEYCODE_D).held) movement -= 4.f * dt * lr_dir;
-
-
-
-			if (player_on_ground)
+			for (auto& obj : objects)
 			{
-				
-				vf3d closest = getClosePt(obj,player_pos);
-				
+				vf3d movement;
+				//move forward, backward
+				vf3d fb_dir(std::sin(cam.yaw), 0, std::cos(cam.yaw));
+				if (getKey(SAPP_KEYCODE_W).held) movement += 5.f * dt * fb_dir;
+				if (getKey(SAPP_KEYCODE_S).held) movement -= 3.f * dt * fb_dir;
+
+				//move left, right
+				vf3d lr_dir(fb_dir.z, 0, -fb_dir.x);
+				if (getKey(SAPP_KEYCODE_A).held) movement += 4.f * dt * lr_dir;
+				if (getKey(SAPP_KEYCODE_D).held) movement -= 4.f * dt * lr_dir;
+
+
+
+				if (player_on_ground)
+				{
+
+					vf3d closest = obj.getClosePt(player_pos);
+
+
+
+					vf3d norm = closest.norm();
+					movement -= norm * norm.dot(movement);
+
+
+				}
+
 				
 
-				vf3d norm = closest.norm();
-				movement -= norm * norm.dot(movement);
+
+
+
+
+				if (!player_on_ground)
+				{
+					player_vel += gravity * dt;
+
+				}
+				player_pos += player_vel * dt;
+
+				player_on_ground = false;
+
+
 				
 
-			}
+				vf3d close_pt = obj.getClosePt(player_pos);
 
-			player_pos += movement;
-
-			cam.pos = player_pos + vf3d(0, player_height, 0);
-
-		}
-
-		if (player_camera)
-        {
-			if (!player_on_ground)
-			{
-				player_vel += gravity * dt;
-				
-			}
-			player_pos += player_vel * dt;
-			
-			player_on_ground = false;
-			
-		
-			{
-				
-				vf3d close_pt = getClosePt(obj,player_pos);
-			
 				float dist2 = (close_pt - player_pos).mag();
 
 				dist_text = dist2;
-			
+
 				if (dist2 < player_rad * player_rad)
 				{
 					float fix = player_rad - std::sqrtf(dist2);
-					player_pos += fix * close_pt.norm();
+					movement += fix * close_pt.norm();
 					player_vel = { 0,0,0 };
 					player_on_ground = true;
 				}
-				
+
+					player_pos += movement;
+
+					cam.pos = player_pos + vf3d(0, player_height, 0);
 			}
 		
 		}
@@ -844,8 +821,10 @@ struct Demo : SokolEngine {
 			}
 
 			
-			updatePhysics(obj, dt);
+			
 		}
+
+		updatePhysics(dt);
 
 		///handleGrabActionBegin();
 		
